@@ -2,9 +2,19 @@ import pygame
 import random
 import math
 from pygame import mixer
+import cv2
+import mediapipe as mp
+import pyautogui
+
 
 # initialize pygame
 pygame.init()
+
+cap = cv2.VideoCapture(0)
+hand_detector = mp.solutions.hands.Hands()
+drawing_utils = mp.solutions.drawing_utils
+screen_width, screen_height = pyautogui.size()
+index_x, index_y = 0, 0
 
 # create the screen
 SCREEN_WIDTH = 800
@@ -12,7 +22,7 @@ SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Background 
-background = pygame.image.load("background.jpg")
+background = pygame.image.load("background.jpeg")
 resized_background = pygame.transform.scale(background, (SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Title and Icom
@@ -96,6 +106,17 @@ running = True
 gameOverTimer = False
 
 while running:
+    ret, frame = cap.read()
+    
+    # this is to flip the frame on y-axis (indicated by 1) because
+    # in this way, if I move my hand to the right, the frame shows the same thing
+    frame = cv2.flip(frame, 1)
+    frame_height, frame_width, _ = frame.shape
+    
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    output = hand_detector.process(rgb_frame)
+    hand_landmarks = output.multi_hand_landmarks
+    
     clock.tick(FPS)
     screen.fill((0,0,0))
     
@@ -116,6 +137,28 @@ while running:
             if(numAsteroidsOnScreen < totalAsteroids):
                 numAsteroidsOnScreen += 1
                 asteroid_spawn()
+        
+    if(hand_landmarks):
+        for landmarksInFrame in hand_landmarks:
+            drawing_utils.draw_landmarks(frame, landmarksInFrame)
+            landmarks = landmarksInFrame.landmark
+            for id, landmark in enumerate(landmarks):
+                
+                # the x and y coordindates are in fraction form of the opencv frame
+                x = int(landmark.x * frame_width)
+                y = int(landmark.y * frame_height)
+                
+                # 8 indicates the tip of the index finger
+                if(id == 8):
+                    cv2.circle(img=frame, center=(x, y), radius=10, color=(0,255,255))
+                    # this will scale the mouse movement to whole computer window instead
+                    # of having it move within the opencv frame's resolution
+                    index_x = screen_width / frame_width * x
+                    index_y = screen_height / frame_height * y
+                    pyautogui.moveTo(index_x, index_y)
+       
+    cv2.imshow('Virtual Mouse', frame)
+    cv2.waitKey(1)             
         
     mx, my = pygame.mouse.get_pos()
     playerX = mx
