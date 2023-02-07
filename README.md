@@ -5,4 +5,4 @@ This is my first attempt at designing a game. So, it's a simple game where the a
 
 | **Current Game Screen Example** |
 | --------|
-| <img src="https://github.com/MohithJ249/Inteliigent-Parking-System/blob/main/pictures/initialPark.png"> |
+| <img src="https://github.com/MohithJ249/Space-Travels/blob/main/current-game-process.jpg"> |
